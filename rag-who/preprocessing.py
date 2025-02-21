@@ -26,11 +26,15 @@ def chunk_text(input_text:str, length:int, words_overlap:int):
     return chunks
 
 
-def process_text(path, length:int=200, words_overlap:int=20):
+def process_text(path, length:int=200, words_overlap:int=20,
+                 return_format:str="list"):
     clean_text = read_clean_text(path)
     chunks = chunk_text(clean_text, length, words_overlap)
 
-    return chunks
+    if return_format=="list":
+        return chunks
+    if return_format=="dict":
+        return [{"text": chunk} for chunk in chunks]
 
 
 def main():
