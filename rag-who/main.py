@@ -1,5 +1,3 @@
-
-
 import os
 import json
 from retrieval import setup_vector_db, query_vector_db_list
