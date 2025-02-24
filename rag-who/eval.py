@@ -25,10 +25,27 @@ def eval_recall_sentence(
     return recalls, not_found_answers
 
 
+def eval_recall_passage(
+    results:list[dict[str,str]], correct_answers_passages:list[dict[str,str]]):
+    recalls = []
+    not_found_answers = []
+
+    for i in range(len(results)):
+        retreived_passages = [a["text"] for a in results[i]["answers"]]
+        not_found_answers_i = [
+            corr_a for corr_a in correct_answers_passages[i]["answer_passages"]
+            if not corr_a in retreived_passages]
+
+        recall = len([
+            corr_a for corr_a in correct_answers_passages[i]["answer_passages"]
+            if corr_a in retreived_passages]) / \
+                len(correct_answers_passages[i]["answer_passages"])
+
         recalls.append(recall)
         not_found_answers.append(not_found_answers_i)
 
     return recalls, not_found_answers
+
 
 def eval_mrr_sentence(
     results:list[dict[str,str]], correct_answers_sent:list[dict[str,str]]):
