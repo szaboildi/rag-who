@@ -11,7 +11,7 @@ if __name__ == "__main__":
     client, encoder = setup_vector_db()
     results = query_vector_db_list(client, encoder, input_queries)
 
-    with open(os.path.join("data", "sample_qa_passage_level.json")) as f:
+    with open(os.path.join("data", "sample_qa_passage_lvl_length150_overlap15.json")) as f:
         correct_answers_passage_rel = json.load(f)
 
     rc = eval_recall_sentence(results, correct_answers)
