@@ -1,4 +1,7 @@
-import re
+import os
+import json
+from eval import is_relevant_sentence_str
+
 
 def read_clean_text(path):
     with open(path, "r") as f:
@@ -27,13 +30,37 @@ def chunk_text(input_text:str, length:int, words_overlap:int):
 
 
 def process_text(path, length:int=200, words_overlap:int=20,
-                 return_format:str="list"):
+                 return_format:str="ls", write_qa_passages:bool=True):
     clean_text = read_clean_text(path)
     chunks = chunk_text(clean_text, length, words_overlap)
 
-    if return_format=="list":
+    corr_answer_ls_dict = []
+    if write_qa_passages:
+        json_location = os.path.join("data", "sample_qa.json")
+        json_out_location = os.path.join("data", "sample_qa_passage_level.json")
+        with open(json_location) as f:
+            correct_answers = json.load(f)
+
+        for corr_answer_dict in correct_answers:
+            relevant_passages = [
+                chunk for chunk in chunks
+                if is_relevant_sentence_str(chunk, corr_answer_dict)]
+
+            corr_answer_dict_passages = {
+                "question": corr_answer_dict["question"],
+                "answer_passages": relevant_passages,
+                "ideal_relevance": [1] * len(relevant_passages) +\
+                    [0] * (len(chunks)-len(relevant_passages))
+            }
+            corr_answer_ls_dict.append(corr_answer_dict_passages)
+
+        with open(json_out_location, "w", encoding="utf-8") as f:
+            json.dump(corr_answer_ls_dict, f, indent=4)
+
+    if return_format=="ls":
         return chunks
-    if return_format=="dict":
+    # Return a list of dictionaries
+    if return_format=="ls_dict":
         return [{"text": chunk} for chunk in chunks]
 
 
@@ -49,3 +76,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+# TODO parametrize
+# QA json input
+# QA json output

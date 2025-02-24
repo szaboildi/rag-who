@@ -43,17 +43,6 @@ def eval_mrr(
             mrr.append(0)
     return mrr
 
-if __name__ == "__main__":
-    with open(os.path.join("data", "sample_qa.json")) as f:
-        correct_answers = json.load(f)
-    input_queries = [item["question"] for item in correct_answers]
-
-    client, encoder = setup_vector_db()
-    results = query_vector_db_list(client, encoder, input_queries)
-
-    rc = eval_recall(results, correct_answers)
-    print(f"Recall: {sum(rc[0]) / len(rc[0]):.2%}")
-
-    mrr = eval_mrr(results, correct_answers)
-    print(mrr)
-    print(f"MRR: {(sum(mrr)/len(mrr)):.2}")
+def is_relevant_sentence_str(result_str:str, correct_answers_sent:dict[str,str]) -> int:
+    return int(any([
+        corr_a in result_str for corr_a in correct_answers_sent["answers"]]))
