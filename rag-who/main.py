@@ -2,7 +2,7 @@
 
 import os
 import json
-from retreival import setup_vector_db, query_vector_db_list
+from retrieval import setup_vector_db, query_vector_db_list
 from eval import eval_recall_sentence, eval_recall_passage, eval_mrr_sentence, ndcg_scorer_manual
 
 if __name__ == "__main__":
