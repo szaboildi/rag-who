@@ -29,19 +29,22 @@ def chunk_text(input_text:str, length:int, words_overlap:int):
     return chunks
 
 
-def process_text(path, length:int=200, words_overlap:int=20,
-                 return_format:str="ls", force_write_qa_passages:bool=False):
+def process_text(
+    path, length:int=200, words_overlap:int=20, return_format:str="ls",
+    force_write_qa_passages:bool=False, input_folder_qa:str="data",
+    relevance_score_file_prefix:str="sample_qa_passage_lvl",
+    sample_qa_file:str="sample_qa.json"):
     clean_text = read_clean_text(path)
     chunks = chunk_text(clean_text, length, words_overlap)
 
     # Check if the relevance scores and chunk-level answers have already been exported,
     # if so, no need to recalculate relevance scores (unless forced)
     json_out_location = os.path.join(
-        "data", f"sample_qa_passage_lvl_length{length}_overlap{words_overlap}.json")
+        input_folder_qa, f"{relevance_score_file_prefix}_length{length}_overlap{words_overlap}.json")
     if force_write_qa_passages or not os.path.exists(json_out_location):
-        print(f"Relevance scores don't exist for these chunks, calculating them now")
+        print(f"Relevance scores don't exist for these chunks or rewrite was forced, calculating them now")
         corr_answer_ls_dict = []
-        json_location = os.path.join("data", "sample_qa.json")
+        json_location = os.path.join(input_folder_qa, sample_qa_file)
         with open(json_location) as f:
             correct_answers = json.load(f)
 
@@ -74,8 +77,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# TODO parametrize
-# QA json input
-# QA json output

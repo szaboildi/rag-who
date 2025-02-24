@@ -1,0 +1,31 @@
+[default]
+input_text_folder           = "data/raw_input_files"
+input_folder_qa             = "data"
+sample_qa_file              = "sample_qa.json"
+relevance_score_file_prefix = "sample_qa_passage_lvl"
+
+chunk_length                = 150
+chunk_overlap               = 15
+
+client_source               = ":memory:"
+encoder_name                = "intfloat/e5-base"
+distance_type               = "COSINE"
+collection_name             = "who_guidelines"
+
+k                           = 4
+
+[not_default]
+input_text_folder           = "data/raw_input_files"
+input_folder_qa             = "data"
+sample_qa_file              = "sample_qa.json"
+relevance_score_file_prefix = "sample_qa_passage_lvl"
+
+chunk_length                = 200
+chunk_overlap               = 20
+
+client_source               = ":memory:"
+encoder_name                = "intfloat/e5-base"
+distance_type               = "COSINE"
+collection_name             = "who_guidelines"
+
+k                           = 4
