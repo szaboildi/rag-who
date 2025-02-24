@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 
 from preprocessing import process_text
 import os
-# import json
+
 
 def setup_vector_db():
     # Set up encoder and client
@@ -13,7 +13,7 @@ def setup_vector_db():
     # Set up the passages
     input_passages_dict = process_text(
             os.path.join("data", "alcohol-use.txt"),
-            length=100, words_overlap=15, return_format="dict")
+            length=100, words_overlap=15, return_format="ls_dict")
 
     client.create_collection(
         collection_name="who_guidelines",
@@ -36,6 +36,7 @@ def setup_vector_db():
 
     return client, encoder
 
+
 def query_vector_db_once(client, encoder, question:str):
     # Set up queries
     # with open(os.path.join("data", "sample_qa.json")) as f:
@@ -55,10 +56,12 @@ def query_vector_db_once(client, encoder, question:str):
 
     return processed_answer
 
+
 def query_vector_db_list(client, encoder, question_list:list[str]):
     answer_list = [
         query_vector_db_once(client, encoder, q) for q in question_list]
     return answer_list
+
 
 # # Set up queries
 # with open(os.path.join("data", "sample_qa.json")) as f:
@@ -85,3 +88,4 @@ def query_vector_db_list(client, encoder, question_list:list[str]):
 #   location
 #   chunk length
 #   chunk overlap (words)
+# correct answer file location
