@@ -8,17 +8,17 @@ if __name__ == "__main__":
         correct_answers = json.load(f)
     input_queries = [item["question"] for item in correct_answers]
 
-    with open(os.path.join("data", "sample_qa_passage_level.json")) as f:
-        correct_answers_passage_rel = json.load(f)
-
-
     client, encoder = setup_vector_db()
     results = query_vector_db_list(client, encoder, input_queries)
+
+    with open(os.path.join("data", "sample_qa_passage_level.json")) as f:
+        correct_answers_passage_rel = json.load(f)
 
     rc = eval_recall_sentence(results, correct_answers)
     print(f"\nRecall (sentence-level): {sum(rc[0]) / len(rc[0]):.2%}")
     rc_passages = eval_recall_passage(results, correct_answers_passage_rel)
-    print(f"Recall (passage-level): {sum(rc_passages[0]) / len(rc_passages[0]):.2%}\n")
+    print(f"Recall (passage-level): {sum(rc_passages[0]) / len(rc_passages[0]):.2%}")
+    print(f"    Item-level: {rc_passages[0]}\n")
 
     mrr = eval_mrr_sentence(results, correct_answers)
     print(f"MRR (mean): {(sum(mrr)/len(mrr)):.2}")
