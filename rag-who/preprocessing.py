@@ -69,18 +69,11 @@ def process_text(path, length:int=200, words_overlap:int=20,
 
 
 def main():
-    import os
-
     chunks = process_text(os.path.join("data", "alcohol-use.txt"))
-    # print(chunks[-3])
-    # print(f"#################\n{chunks[-2]}")
-    # print(f"#################\n{chunks[-1]}")
 
-    print(len(chunks))
 
 if __name__ == "__main__":
     main()
-
 
 
 # TODO parametrize

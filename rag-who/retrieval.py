@@ -13,7 +13,8 @@ def setup_vector_db():
     # Set up the passages
     input_passages_dict = process_text(
             os.path.join("data", "alcohol-use.txt"),
-            length=100, words_overlap=15, return_format="ls_dict")
+            length=150, words_overlap=15, return_format="ls_dict")
+    print("Clean chunks created")
 
     client.create_collection(
         collection_name="who_guidelines",
@@ -60,6 +61,7 @@ def query_vector_db_once(client, encoder, question:str):
 def query_vector_db_list(client, encoder, question_list:list[str]):
     answer_list = [
         query_vector_db_once(client, encoder, q) for q in question_list]
+
     return answer_list
 
 
