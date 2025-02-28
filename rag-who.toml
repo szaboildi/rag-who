@@ -12,7 +12,13 @@ encoder_name                = "intfloat/e5-base"
 distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
-k                           = 4
+retrieve_k                  = 4
+
+llm_model                   = "gpt-4o-mini"
+llm_temperature             = 0.4
+llm_system_prompt_path      = "prompts/llm_system_prompt.txt"
+QA_export_folder            = "data/rag_qa"
+
 
 [not_default]
 input_text_folder           = "data/raw_input_files"
@@ -28,4 +34,9 @@ encoder_name                = "intfloat/e5-base"
 distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
-k                           = 4
+retrieve_k                  = 4
+
+llm_model                   = "gpt-4o-mini"
+llm_temperature             = 0.4
+llm_system_prompt_path      = "prompts/llm_system_prompt.txt"
+QA_export_folder            = "data/rag_qa"
