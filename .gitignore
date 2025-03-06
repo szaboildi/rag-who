@@ -173,5 +173,5 @@ cython_debug/
 # Data folder
 data/*
 
-# Private env variables
-.env
+# Toy scripts
+rag-who/toy_scripts/*
