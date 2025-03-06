@@ -1,9 +1,4 @@
-import os
-import json
 import argparse
-from openai import OpenAI
-import pandas as pd
-import time
 
 from retrieval import setup_vector_db
 
@@ -21,8 +16,62 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 
+def retrieval_pipeline_haystack(config, config_name:str="default"):
+    vector_db, embedder = setup_vector_db(
+        encoder_name=config[config_name]["encoder_name"],
+        client_source=config[config_name]["client_source"],
+        input_folder=config[config_name]["input_text_folder"],
+        chunk_length=config[config_name]["chunk_length"],
+        chunk_overlap_words=config[config_name]["chunk_overlap"],
+        collection_name=config[config_name]["collection_name"],
+        dist_name=config[config_name]["distance_type"],
+        input_folder_qa=config[config_name]["input_folder_qa"],
+        relevance_score_file_prefix=config[config_name]["relevance_score_file_prefix"],
+        sample_qa_file=config[config_name]["sample_qa_file"],
+        mode="haystack")
 
-def rag_pipeline(config_name:str="default", api_key_variable:str="OPENAI_API_KEY"):
+    # Retriever
+    retriever = InMemoryEmbeddingRetriever(
+        vector_db, top_k=config[config_name]["retrieve_k"])
+
+    retriever_pipeline = Pipeline()
+
+    retriever_pipeline.add_component("text_embedder", embedder)
+    retriever_pipeline.add_component("retriever", retriever)
+
+    retriever_pipeline.connect(
+        "text_embedder.embedding", "retriever.query_embedding")
+
+    return retriever_pipeline
+
+
+def query_vector_db_once_haystack(
+    retrieval_pipeline:Pipeline, question:str, dist_name:str="COSINE"):
+
+    raw_answer = retrieval_pipeline.run({"text_embedder": {"text": question}})
+
+    processed_answer = {"question": question,
+    "answers": [{
+        "text": doc.content,
+        dist_name.lower(): doc.score} for doc in raw_answer["retriever"]["documents"]]
+    }
+
+    return processed_answer
+
+
+def query_vector_db_list_haystack(
+    retrieval_pipeline:Pipeline,
+    question_list:list[str], dist_name:str="COSINE"):
+    answer_list = [
+        query_vector_db_once_haystack(
+            retrieval_pipeline, q, dist_name)
+        for q in question_list]
+
+    return answer_list
+
+
+def rag_pipeline_haystack(
+    config, config_name:str="default", api_key_variable:str="OPENAI_API_KEY"):
     vector_db, embedder = setup_vector_db(
         encoder_name=config[config_name]["encoder_name"],
         client_source=config[config_name]["client_source"],
@@ -76,7 +125,7 @@ def rag_query_once_haystack(rag_pipeline:Pipeline, query:str):
     return query, response["llm"]["replies"][0].text
 
 
-def rag_query_list_qdrant(
+def rag_query_list_haystack(
     rag_pipeline:Pipeline, queries:list[str]):
     responses = [rag_query_once_haystack(rag_pipeline, q)[1] for q in queries]
 
@@ -91,12 +140,18 @@ if __name__ == "__main__":
     parser.add_argument("--config_name", nargs='?', default="default")
     args=parser.parse_args()
 
-    # print(args.config_name)
-    # retrieve_and_eval(config_name=args.config_name)
-    pipeline = rag_pipeline(config_name="default")
+    # # print(args.config_name)
+
     # question = "How long do rabbits live?"
     # question = "How many deaths does alcoholism cause a year in the European Region?"
     question = "How many deaths does alcoholism cause a year in the world?"
 
-    query, response = rag_query_once_haystack(pipeline, question)
-    print(query, response, sep="\n")
+    # pipeline = rag_pipeline_haystack(config, config_name=args.config_name)
+    # query, response = rag_query_once_haystack(pipeline, question)
+    # print(query, response, sep="\n")
+
+    pipeline = retrieval_pipeline_haystack(config, args.config_name)
+    result = query_vector_db_once_haystack(
+        pipeline, question,
+        dist_name=config[args.config_name]["distance_type"])
+    print(result)

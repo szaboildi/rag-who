@@ -170,6 +170,14 @@ def retrieve_and_eval(config_name:str="default", mode="qdrant"):
             collection_name = config[config_name]["collection_name"],
             k=config[config_name]["retrieve_k"])
         print("Queries completed")
+
+    elif mode=="haystack":
+        retrieval_pipeline = retrieval_pipeline_haystack(
+            config, config_name=config_name)
+        results = query_vector_db_list_haystack(
+            retrieval_pipeline, input_queries,
+            dist_name=config[config_name]["distance_type"])
+
     with open(os.path.join(
         config[config_name]["input_folder_qa"],
         f'{config[config_name]["relevance_score_file_prefix"]}_length' + \
@@ -195,3 +203,7 @@ def retrieve_and_eval(config_name:str="default", mode="qdrant"):
     ndcg = ndcg_scorer_manual(results, correct_answers, correct_answers_passage_rel)
     print(f"nDCG (mean): {(sum(ndcg)/len(ndcg)):.2}")
     print(f"    Item-level: {ndcg}")
+
+if __name__ == "__main__":
+    retrieve_and_eval(mode="haystack")
+    retrieve_and_eval(mode="qdrant")
