@@ -1,4 +1,3 @@
-
 from sentence_transformers import SentenceTransformer
 
 from preprocessing import process_text
@@ -15,7 +14,7 @@ input_passages = [
         os.path.join("data", "alcohol-use.txt"),
         length=100, words_overlap=15)]
 
-with open(os.path.join("data", "sample_questions.json")) as f:
+with open(os.path.join("data", "sample_qa.json")) as f:
     d = json.load(f)
 input_queries = [f"query: {item['question']}" for item in d]
 
@@ -23,11 +22,12 @@ input_texts = input_queries + input_passages
 
 
 # Encode input texts
-model = SentenceTransformer('intfloat/e5-base')
-embeddings = model.encode(input_texts, normalize_embeddings=True)
+encoder = SentenceTransformer('intfloat/e5-base')
+embeddings = encoder.encode(input_texts, normalize_embeddings=True)
 
 # Print scores
 scores = (embeddings[:6] @ embeddings[6:].T) * 100
+
 # print(scores.tolist())
 print([max(s) for s in scores])
 
