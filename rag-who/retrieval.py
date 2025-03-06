@@ -2,7 +2,6 @@ from qdrant_client import models, QdrantClient
 from sentence_transformers import SentenceTransformer
 
 from haystack.document_stores.in_memory import InMemoryDocumentStore
-from haystack import Document
 from haystack.components.embedders import SentenceTransformersDocumentEmbedder, SentenceTransformersTextEmbedder
 
 from preprocessing import process_text
@@ -57,10 +56,23 @@ def setup_vector_db(
         return client, encoder
 
     elif mode=="haystack":
+        if dist_name.lower()=="cosine":
+            dist_name = dist_name.lower()
+        elif dist_name.lower()=="dot" or dist_name.lower()=="dotproduct" or\
+            dist_name.lower()=="dot_product":
+            dist_name = "dot_product"
+        else:
+            raise ValueError(
+                """
+                Invalid similarity type provided for haystack.
+                You can use \"cosine\" or \"dot_product\"""")
+
         doc_embedder = SentenceTransformersDocumentEmbedder(model=encoder_name)
         doc_embedder.warm_up()
 
-        document_store = InMemoryDocumentStore()
+        document_store = InMemoryDocumentStore(
+            embedding_similarity_function=dist_name
+        )
 
         file_names = glob.glob(f"{input_folder}/*")
         for file_name in file_names:
