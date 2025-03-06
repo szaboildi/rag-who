@@ -1,7 +1,7 @@
 import os
 import json
 from eval import is_relevant_sentence_str
-
+from haystack import Document
 
 def read_clean_text(path):
     with open(path, "r") as f:
@@ -69,11 +69,15 @@ def process_text(
     # Return a list of dictionaries
     if return_format=="ls_dict":
         return [{"text": chunk} for chunk in chunks]
+    if return_format=="ls_haystack_doc":
+        return [Document(content=chunk, meta={}) for chunk in chunks]
 
 
 def main():
-    chunks = process_text(os.path.join("data", "alcohol-use.txt"))
-
+    chunks = process_text(
+        os.path.join("data", "raw_input_files", "alcohol-use.txt"),
+        return_format="ls_haystack_doc")
+    print(len(chunks))
 
 if __name__ == "__main__":
     main()

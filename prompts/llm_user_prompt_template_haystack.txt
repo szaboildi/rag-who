@@ -1,0 +1,8 @@
+<Answer the following question:
+<Question>{{ question }}\n</Question>\n\n"
+
+<Context>:
+{% for document in documents %}
+    <Document{{ loop.index }}>{{ document.content }}</Document{{ loop.index }}>
+{% endfor %}
+</Context>

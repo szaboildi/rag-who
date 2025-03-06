@@ -1,6 +1,10 @@
 from qdrant_client import models, QdrantClient
 from sentence_transformers import SentenceTransformer
 
+from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack import Document
+from haystack.components.embedders import SentenceTransformersDocumentEmbedder, SentenceTransformersTextEmbedder
+
 from preprocessing import process_text
 import glob
 
@@ -12,68 +16,66 @@ def setup_vector_db(
     collection_name:str="dummy_name", dist_name:str="COSINE",
     input_folder_qa:str="data",
     relevance_score_file_prefix:str="sample_qa_passage_lvl",
-    sample_qa_file:str="sample_qa.json"):
-    # Set up encoder and client
-    encoder = SentenceTransformer(encoder_name)
-    client = QdrantClient(client_source)
+    sample_qa_file:str="sample_qa.json", mode="qdrant"):
+    if mode=="qdrant":
 
-    client.create_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(
-            size=encoder.get_sentence_embedding_dimension(),  # Vector size is defined by used model
-            distance=getattr(models.Distance, dist_name.upper()),
-        ),
-    )
+        # Set up encoder and client
+        encoder = SentenceTransformer(encoder_name)
+        client = QdrantClient(client_source)
 
-    file_names = glob.glob(f"{input_folder}/*")
-    for file_name in file_names:
-        # Set up the passages
-        input_passages_dict = process_text(
-            file_name, length=chunk_length, words_overlap=chunk_overlap_words,
-            return_format="ls_dict", input_folder_qa=input_folder_qa,
-            relevance_score_file_prefix=relevance_score_file_prefix,
-            sample_qa_file=sample_qa_file)
-
-        print(f"Clean chunks created for {file_name}")
-
-        client.upload_points(
+        client.create_collection(
             collection_name=collection_name,
-            points=[
-                models.PointStruct(
-                    id=idx, vector=encoder.encode(
-                        doc["text"], normalize_embeddings=True).tolist(),
-                    payload=doc)
-                for idx, doc in enumerate(input_passages_dict)
-            ],
+            vectors_config=models.VectorParams(
+                size=encoder.get_sentence_embedding_dimension(),  # Vector size is defined by used model
+                distance=getattr(models.Distance, dist_name.upper()),
+            ),
         )
 
-    print("Vector database created")
-    return client, encoder
+        file_names = glob.glob(f"{input_folder}/*")
+        for file_name in file_names:
+            # Set up the passages
+            input_passages_dict = process_text(
+                file_name, length=chunk_length, words_overlap=chunk_overlap_words,
+                return_format="ls_dict", input_folder_qa=input_folder_qa,
+                relevance_score_file_prefix=relevance_score_file_prefix,
+                sample_qa_file=sample_qa_file)
 
+            print(f"Clean chunks created for {file_name}")
 
-def query_vector_db_once(
-    client, encoder, question:str, collection_name:str="dummy_name", k:int=5,
-    dist_name:str="COSINE"):
+            client.upload_points(
+                collection_name=collection_name,
+                points=[
+                    models.PointStruct(
+                        id=idx, vector=encoder.encode(
+                            doc["text"], normalize_embeddings=True).tolist(),
+                        payload=doc)
+                    for idx, doc in enumerate(input_passages_dict)
+                ],
+            )
 
-    raw_answer = client.query_points(
-        collection_name=collection_name,
-        query=encoder.encode(question, normalize_embeddings=True).tolist(),
-        limit=k).points
+        print("Vector database created")
+        return client, encoder
 
-    processed_answer = {"question": question,
-    "answers": [{
-        "text": hit.payload["text"],
-        dist_name.lower(): hit.score} for hit in raw_answer]
-    }
+    elif mode=="haystack":
+        doc_embedder = SentenceTransformersDocumentEmbedder(model=encoder_name)
+        doc_embedder.warm_up()
 
-    return processed_answer
+        document_store = InMemoryDocumentStore()
 
+        file_names = glob.glob(f"{input_folder}/*")
+        for file_name in file_names:
+            # Set up the passages
+            input_passages = process_text(
+                file_name, length=chunk_length, words_overlap=chunk_overlap_words,
+                return_format="ls_haystack_doc", input_folder_qa=input_folder_qa,
+                relevance_score_file_prefix=relevance_score_file_prefix,
+                sample_qa_file=sample_qa_file)
 
-def query_vector_db_list(
-    client, encoder, question_list:list[str],
-    collection_name:str="dummy_name", k:int=5):
-    answer_list = [
-        query_vector_db_once(
-            client, encoder, q, collection_name, k) for q in question_list]
+            print(f"Clean chunks created for {file_name}")
 
-    return answer_list
+            embedded_input_passages = doc_embedder.run(input_passages)
+            document_store.write_documents(embedded_input_passages["documents"])
+
+        query_embedder = SentenceTransformersTextEmbedder(model=encoder_name)
+
+        return document_store, query_embedder
