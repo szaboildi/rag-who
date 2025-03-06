@@ -11,7 +11,7 @@ from generation import create_qa_string, api_call #, QuestionAnswering
 
 
 try:
-    import tomllib
+    import tomllib # type: ignore
 except ModuleNotFoundError:
     import tomli as tomllib
 

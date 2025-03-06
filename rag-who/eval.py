@@ -1,5 +1,4 @@
 import math
-import numpy as np
 # from sklearn.metrics import ndcg_score
 
 
