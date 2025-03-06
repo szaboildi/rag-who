@@ -16,3 +16,19 @@ def export_qa_lists(queries:list[str], responses:list[str],
         index=False)
 
     return
+
+
+def is_relevant_sentence_str(result_str:str, correct_answers_sent:dict[str,str]) -> int:
+    return int(any([
+        corr_a in result_str for corr_a in correct_answers_sent["answers"]]))
+
+
+def is_relevant_sentence_dict(
+    result:dict[str,str], correct_answers_sent:dict[str,str]) -> dict[str,str]:
+    # retreived_passages = [a["text"] for a in result["answers"]]
+    for a in result["answers"]:
+        # Iterating through the retrieved passages, find the first one
+        # that's relevant, and add it's RR to the the accumulator list
+        a["is_relevant"] = is_relevant_sentence_str(a["text"], correct_answers_sent)
+
+    return result
