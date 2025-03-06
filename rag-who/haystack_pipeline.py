@@ -37,7 +37,8 @@ def rag_pipeline(config_name:str="default", api_key_variable:str="OPENAI_API_KEY
         mode="haystack")
 
     # Retriever
-    retriever = InMemoryEmbeddingRetriever(vector_db)
+    retriever = InMemoryEmbeddingRetriever(
+        vector_db, top_k=config[config_name]["retrieve_k"])
 
     # Prompt builder
     with open(config[config_name]["llm_system_prompt_path"], "r") as f:
