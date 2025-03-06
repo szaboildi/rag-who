@@ -172,3 +172,6 @@ cython_debug/
 
 # Data folder
 data/*
+
+# Toy scripts
+rag-who/toy_scripts/*
