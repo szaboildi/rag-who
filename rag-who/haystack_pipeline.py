@@ -18,91 +18,113 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 
-def retrieval_pipeline_haystack(config, config_name:str="default"):
+def retrieval_pipeline_haystack(config):
     vector_db, embedder = setup_vector_db(
-        encoder_name=config[config_name]["encoder_name"],
-        client_source=config[config_name]["client_source"],
-        input_folder=config[config_name]["input_text_folder"],
-        chunk_length=config[config_name]["chunk_length"],
-        chunk_overlap_words=config[config_name]["chunk_overlap"],
-        collection_name=config[config_name]["collection_name"],
-        dist_name=config[config_name]["distance_type"],
-        input_folder_qa=config[config_name]["input_folder_qa"],
-        relevance_score_file_prefix=config[config_name]["relevance_score_file_prefix"],
-        sample_qa_file=config[config_name]["sample_qa_file"],
+        encoder_name=config["encoder_name"],
+        client_source=config["client_source"],
+        input_folder=config["input_text_folder"],
+        chunk_length=config["chunk_length"],
+        chunk_overlap_words=config["chunk_overlap"],
+        collection_name=config["collection_name"],
+        dist_name=config["distance_type"],
+        input_folder_qa=config["input_folder_qa"],
+        relevance_score_file_prefix=config["relevance_score_file_prefix"],
+        sample_qa_file=config["sample_qa_file"],
         mode="haystack")
 
     # Retriever
-    retriever = InMemoryEmbeddingRetriever(
-        vector_db, top_k=config[config_name]["retrieve_k"])
+    k = config["retrieve_k"]
+    if config["sparse_retriever"] == "BM25":
+        k = config["retrieve_k_pre_rank"]
+        sparse_retriever = InMemoryBM25Retriever(vector_db, top_k=k)
+    embedding_retriever = InMemoryEmbeddingRetriever(vector_db, top_k=k)
 
+    if config["sparse_retriever"] == "BM25":
+        document_joiner = DocumentJoiner(
+            top_k=config["retrieve_k"],
+            join_mode="reciprocal_rank_fusion")
+
+    # Build a pipeline
     retriever_pipeline = Pipeline()
-
     retriever_pipeline.add_component("text_embedder", embedder)
-    retriever_pipeline.add_component("retriever", retriever)
+    retriever_pipeline.add_component("embedding_retriever", embedding_retriever)
+    if config["sparse_retriever"] == "BM25":
+        retriever_pipeline.add_component("sparse_retriever", sparse_retriever)
+        retriever_pipeline.add_component("document_joiner", document_joiner)
 
-    retriever_pipeline.connect(
-        "text_embedder.embedding", "retriever.query_embedding")
+    # Connect the components to each other
+    retriever_pipeline.connect("text_embedder.embedding", "embedding_retriever.query_embedding")
+    if config["sparse_retriever"] == "BM25":
+        retriever_pipeline.connect("embedding_retriever", "document_joiner")
+        retriever_pipeline.connect("sparse_retriever", "document_joiner")
+        retriever_pipeline.connect("document_joiner", "prompt_builder")
 
     return retriever_pipeline
 
 
 def query_vector_db_once_haystack(
-    retrieval_pipeline:Pipeline, question:str, dist_name:str="COSINE"):
+    retrieval_pipeline:Pipeline, query:str, config):
+    if config["sparse_retriever"] == "BM25":
+        raw_answer = retrieval_pipeline.run(
+            {"text_embedder": {"text": query},
+             "sparse_retriever": {"query": query}})
+    elif config["sparse_retriever"].lower() == "none":
+        raw_answer = retrieval_pipeline.run({
+            "text_embedder": {"text": query}})
+    else:
+        raise ValueError('Invalid sparse_retriever provided in config. Use "BM25" or "None".')
 
-    raw_answer = retrieval_pipeline.run({"text_embedder": {"text": question}})
-
-    processed_answer = {"question": question,
+    processed_answer = {"question": query,
     "answers": [{
         "text": doc.content,
-        dist_name.lower(): doc.score} for doc in raw_answer["retriever"]["documents"]]
+        config["distance_type"].lower(): doc.score
+        } for doc in raw_answer["retriever"]["documents"]]
     }
 
     return processed_answer
 
 
 def query_vector_db_list_haystack(
-    retrieval_pipeline:Pipeline,
-    question_list:list[str], dist_name:str="COSINE"):
+    retrieval_pipeline:Pipeline, query_list:list[str], config):
     answer_list = [
         query_vector_db_once_haystack(
-            retrieval_pipeline, q, dist_name)
-        for q in question_list]
+            retrieval_pipeline, q, config)
+        for q in query_list]
 
     return answer_list
 
 
 def rag_pipeline_haystack(
-    config, config_name:str="default", api_key_variable:str="OPENAI_API_KEY"):
+    config, api_key_variable:str="OPENAI_API_KEY"):
     vector_db, embedder = setup_vector_db(
-        encoder_name=config[config_name]["encoder_name"],
-        client_source=config[config_name]["client_source"],
-        input_folder=config[config_name]["input_text_folder"],
-        chunk_length=config[config_name]["chunk_length"],
-        chunk_overlap_words=config[config_name]["chunk_overlap"],
-        collection_name=config[config_name]["collection_name"],
-        dist_name=config[config_name]["distance_type"],
-        input_folder_qa=config[config_name]["input_folder_qa"],
-        relevance_score_file_prefix=config[config_name]["relevance_score_file_prefix"],
-        sample_qa_file=config[config_name]["sample_qa_file"],
+        encoder_name=config["encoder_name"],
+        client_source=config["client_source"],
+        input_folder=config["input_text_folder"],
+        chunk_length=config["chunk_length"],
+        chunk_overlap_words=config["chunk_overlap"],
+        collection_name=config["collection_name"],
+        dist_name=config["distance_type"],
+        input_folder_qa=config["input_folder_qa"],
+        relevance_score_file_prefix=config["relevance_score_file_prefix"],
+        sample_qa_file=config["sample_qa_file"],
         mode="haystack")
 
     # Retriever
-    k = config[config_name]["retrieve_k"]
-    if config[config_name]["sparse_retriever"] == "BM25":
-        k = config[config_name]["retrieve_k_pre_rank"]
+    k = config["retrieve_k"]
+    if config["sparse_retriever"] == "BM25":
+        k = config["retrieve_k_pre_rank"]
         sparse_retriever = InMemoryBM25Retriever(vector_db, top_k=k)
     embedding_retriever = InMemoryEmbeddingRetriever(vector_db, top_k=k)
 
-    if config[config_name]["sparse_retriever"] == "BM25":
+    if config["sparse_retriever"] == "BM25":
         document_joiner = DocumentJoiner(
-            top_k=config[config_name]["retrieve_k"],
+            top_k=config["retrieve_k"],
             join_mode="reciprocal_rank_fusion")
 
     # Prompt builder
-    with open(config[config_name]["llm_system_prompt_path"], "r") as f:
+    with open(config["llm_system_prompt_path"], "r") as f:
         system_prompt = f.read()
-    with open(config[config_name]["llm_user_prompt_template"], "r") as f:
+    with open(config["llm_user_prompt_template"], "r") as f:
         user_template = f.read()
     template = [
         ChatMessage.from_system(system_prompt),
@@ -119,34 +141,43 @@ def rag_pipeline_haystack(
 
     rag_pipeline.add_component("text_embedder", embedder)
     rag_pipeline.add_component("embedding_retriever", embedding_retriever)
-    if config[config_name]["sparse_retriever"] == "BM25":
+    if config["sparse_retriever"] == "BM25":
         rag_pipeline.add_component("sparse_retriever", sparse_retriever)
         rag_pipeline.add_component("document_joiner", document_joiner)
     rag_pipeline.add_component("prompt_builder", prompt_builder)
     rag_pipeline.add_component("llm", chat_generator)
-    # Now, connect the components to each other
+    # Connect the components to each other
     rag_pipeline.connect("text_embedder.embedding", "embedding_retriever.query_embedding")
-    if config[config_name]["sparse_retriever"] == "BM25":
+    if config["sparse_retriever"] == "BM25":
         rag_pipeline.connect("embedding_retriever", "document_joiner")
         rag_pipeline.connect("sparse_retriever", "document_joiner")
         rag_pipeline.connect("document_joiner", "prompt_builder")
-    elif config[config_name]["sparse_retriever"] == "None":
+    elif config["sparse_retriever"] == "None":
         rag_pipeline.connect("embedding_retriever", "prompt_builder")
     rag_pipeline.connect("prompt_builder.prompt", "llm.messages")
 
-    rag_pipeline.draw("rag_pipeline.png")
+    # rag_pipeline.draw("rag_pipeline.png")
     return rag_pipeline
 
 
-def rag_query_once_haystack(rag_pipeline:Pipeline, query:str):
-    response = rag_pipeline.run({"text_embedder": {"text": query}, "prompt_builder": {"question": query}})
+def rag_query_once_haystack(rag_pipeline:Pipeline, query:str, config):
+    if config["sparse_retriever"] == "BM25":
+        response = rag_pipeline.run(
+            {"text_embedder": {"text": query},
+             "sparse_retriever": {"query": query},
+             "prompt_builder": {"query": query}})
+    elif config["sparse_retriever"].lower() == "none":
+        response = rag_pipeline.run({
+            "text_embedder": {"text": query}, "prompt_builder": {"question": query}})
+    else:
+        raise ValueError('Invalid sparse_retriever provided in config. Use "BM25" or "None".')
 
     return query, response["llm"]["replies"][0].text
 
 
 def rag_query_list_haystack(
-    rag_pipeline:Pipeline, queries:list[str]):
-    responses = [rag_query_once_haystack(rag_pipeline, q)[1] for q in queries]
+    rag_pipeline:Pipeline, queries:list[str], config):
+    responses = [rag_query_once_haystack(rag_pipeline, q, config)[1] for q in queries]
 
     return queries, responses
 
@@ -165,12 +196,12 @@ if __name__ == "__main__":
     # question = "How many deaths does alcoholism cause a year in the European Region?"
     question = "How many deaths does alcoholism cause a year in the world?"
 
-    # pipeline = rag_pipeline_haystack(config, config_name=args.config_name)
-    # query, response = rag_query_once_haystack(pipeline, question)
+    # pipeline = rag_pipeline_haystack(config=config[args.config_name])
+    # query, response = rag_query_once_haystack(
+    #     pipeline, question, config[args.config_name])
     # print(query, response, sep="\n")
 
-    pipeline = retrieval_pipeline_haystack(config, args.config_name)
+    pipeline = retrieval_pipeline_haystack(config=config[args.config_name])
     result = query_vector_db_once_haystack(
-        pipeline, question,
-        dist_name=config[args.config_name]["distance_type"])
+        pipeline, question, config[args.config_name])
     print(result)

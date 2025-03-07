@@ -1,5 +1,5 @@
 <Answer the following question:
-<Question>{{ question }}\n</Question>\n\n"
+<Question>{{ query }}\n</Question>\n\n"
 
 <Context>:
 {% for document in documents %}
