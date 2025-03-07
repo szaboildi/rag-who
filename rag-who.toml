@@ -12,7 +12,9 @@ encoder_name                = "intfloat/e5-base"
 distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
+retrieve_k_pre_rank         = 8
 retrieve_k                  = 4
+sparse_retriever            = "BM25"
 
 llm_model                   = "gpt-4o-mini"
 llm_temperature             = 0.4
@@ -36,6 +38,7 @@ distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
 retrieve_k                  = 4
+sparse_retriever            = "BM25"
 
 llm_model                   = "gpt-4o-mini"
 llm_temperature             = 0.4

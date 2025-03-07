@@ -2,7 +2,9 @@ import argparse
 
 from embedding import setup_vector_db
 
-from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
+from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever, InMemoryBM25Retriever
+from haystack.components.joiners import DocumentJoiner
+# from haystack.components.rankers import TransformersSimilarityRanker
 from haystack.components.builders import ChatPromptBuilder
 from haystack.dataclasses import ChatMessage
 from haystack.components.generators.chat import OpenAIChatGenerator
@@ -86,8 +88,16 @@ def rag_pipeline_haystack(
         mode="haystack")
 
     # Retriever
-    retriever = InMemoryEmbeddingRetriever(
-        vector_db, top_k=config[config_name]["retrieve_k"])
+    k = config[config_name]["retrieve_k"]
+    if config[config_name]["sparse_retriever"] == "BM25":
+        k = config[config_name]["retrieve_k_pre_rank"]
+        sparse_retriever = InMemoryBM25Retriever(vector_db, top_k=k)
+    embedding_retriever = InMemoryEmbeddingRetriever(vector_db, top_k=k)
+
+    if config[config_name]["sparse_retriever"] == "BM25":
+        document_joiner = DocumentJoiner(
+            top_k=config[config_name]["retrieve_k"],
+            join_mode="reciprocal_rank_fusion")
 
     # Prompt builder
     with open(config[config_name]["llm_system_prompt_path"], "r") as f:
@@ -108,14 +118,23 @@ def rag_pipeline_haystack(
     rag_pipeline = Pipeline()
 
     rag_pipeline.add_component("text_embedder", embedder)
-    rag_pipeline.add_component("retriever", retriever)
+    rag_pipeline.add_component("embedding_retriever", embedding_retriever)
+    if config[config_name]["sparse_retriever"] == "BM25":
+        rag_pipeline.add_component("sparse_retriever", sparse_retriever)
+        rag_pipeline.add_component("document_joiner", document_joiner)
     rag_pipeline.add_component("prompt_builder", prompt_builder)
     rag_pipeline.add_component("llm", chat_generator)
     # Now, connect the components to each other
-    rag_pipeline.connect("text_embedder.embedding", "retriever.query_embedding")
-    rag_pipeline.connect("retriever", "prompt_builder")
+    rag_pipeline.connect("text_embedder.embedding", "embedding_retriever.query_embedding")
+    if config[config_name]["sparse_retriever"] == "BM25":
+        rag_pipeline.connect("embedding_retriever", "document_joiner")
+        rag_pipeline.connect("sparse_retriever", "document_joiner")
+        rag_pipeline.connect("document_joiner", "prompt_builder")
+    elif config[config_name]["sparse_retriever"] == "None":
+        rag_pipeline.connect("embedding_retriever", "prompt_builder")
     rag_pipeline.connect("prompt_builder.prompt", "llm.messages")
 
+    rag_pipeline.draw("rag_pipeline.png")
     return rag_pipeline
 
 
