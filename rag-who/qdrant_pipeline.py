@@ -3,7 +3,7 @@ import json
 import argparse
 from openai import OpenAI
 
-from retrieval import setup_vector_db
+from embedding import setup_vector_db
 
 # from pydantic import BaseModel
 

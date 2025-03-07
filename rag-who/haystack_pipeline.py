@@ -1,6 +1,6 @@
 import argparse
 
-from retrieval import setup_vector_db
+from embedding import setup_vector_db
 
 from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever
 from haystack.components.builders import ChatPromptBuilder
