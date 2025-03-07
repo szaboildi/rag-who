@@ -143,7 +143,6 @@ def ndcg_scorer_manual(
     return ndcg_scores
 
 
-
 def retrieve_and_eval(config_name:str="default", mode="qdrant"):
     with open("rag-who.toml", mode="rb") as fp:
         config = tomllib.load(fp)
