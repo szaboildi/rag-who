@@ -57,7 +57,6 @@ def retrieval_pipeline_haystack(config):
     if config["sparse_retriever"] == "BM25":
         retriever_pipeline.connect("embedding_retriever", "document_joiner")
         retriever_pipeline.connect("sparse_retriever", "document_joiner")
-        retriever_pipeline.connect("document_joiner", "prompt_builder")
 
     return retriever_pipeline
 
@@ -78,7 +77,7 @@ def query_vector_db_once_haystack(
     "answers": [{
         "text": doc.content,
         config["distance_type"].lower(): doc.score
-        } for doc in raw_answer["retriever"]["documents"]]
+        } for doc in raw_answer["document_joiner"]["documents"]]
     }
 
     return processed_answer
@@ -194,7 +193,12 @@ if __name__ == "__main__":
 
     # question = "How long do rabbits live?"
     # question = "How many deaths does alcoholism cause a year in the European Region?"
-    question = "How many deaths does alcoholism cause a year in the world?"
+    # question = "How many deaths does alcoholism cause a year in the world?"
+    # question = "How much should a child exercise?"
+    question = "How much should an eight year-old exercise?"
+    # question = "How much should a 50 year-old exercise?"
+    # question = "How much should my grandmother exercise?"
+
 
     # pipeline = rag_pipeline_haystack(config=config[args.config_name])
     # query, response = rag_query_once_haystack(
