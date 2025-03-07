@@ -71,8 +71,7 @@ def setup_vector_db(
         doc_embedder.warm_up()
 
         document_store = InMemoryDocumentStore(
-            embedding_similarity_function=dist_name
-        )
+            embedding_similarity_function=dist_name)
 
         file_names = glob.glob(f"{input_folder}/*")
         for file_name in file_names:
