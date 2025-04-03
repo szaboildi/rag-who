@@ -12,11 +12,14 @@ encoder_name                = "intfloat/e5-base"
 distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
+retrieve_k_pre_rank         = 8
 retrieve_k                  = 4
+sparse_retriever            = "BM25"
 
 llm_model                   = "gpt-4o-mini"
 llm_temperature             = 0.4
 llm_system_prompt_path      = "prompts/llm_system_prompt.txt"
+llm_user_prompt_template    = "prompts/llm_user_prompt_template_haystack.txt"
 QA_export_folder            = "data/rag_qa"
 
 
@@ -35,8 +38,10 @@ distance_type               = "COSINE"
 collection_name             = "who_guidelines"
 
 retrieve_k                  = 4
+sparse_retriever            = "BM25"
 
 llm_model                   = "gpt-4o-mini"
 llm_temperature             = 0.4
 llm_system_prompt_path      = "prompts/llm_system_prompt.txt"
+llm_user_prompt_template    = "prompts/llm_user_prompt_template_haystack.txt"
 QA_export_folder            = "data/rag_qa"
