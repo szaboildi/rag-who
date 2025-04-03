@@ -1,0 +1,23 @@
+[project]
+name = "rag-who"
+version = "0.1.0"
+description = "A RAG project for World Health Organization guidelines"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+readme = "README.md"
+authors = [
+  {name = "Ildi Szabo"},
+]
+requires-python = ">=3.10"
+dependencies = [
+    "haystack-ai==2.10.3",
+    "openai==1.64.0",
+    "pandas==2.2.3",
+    "sentence-transformers==3.4.1",
+    "tomli>=1.1.0 ; python_full_version < '3.11'",
+]
+
+[tool.setuptools]
+packages = ["rag-who"]

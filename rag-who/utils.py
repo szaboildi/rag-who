@@ -3,6 +3,11 @@ import pandas as pd
 import time
 import os
 
+try:
+    import tomllib # type: ignore
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 
 
 def export_qa_lists(queries:list[str], responses:list[str],
@@ -32,3 +37,39 @@ def is_relevant_sentence_dict(
         a["is_relevant"] = is_relevant_sentence_str(a["text"], correct_answers_sent)
 
     return result
+
+
+def read_config(toml_path:str, config_name:str):
+    with open(toml_path, "rb") as bf:
+        config = tomllib.load(bf)
+
+    """
+    match config[config_name]:
+        case {
+            "input_text_folder": str(),
+            "input_folder_qa": str(),
+            "sample_qa_file": str(),
+            "relevance_score_file_prefix": str(),
+            "chunk_length": int(),
+            "chunk_overlap": int(),
+            "client_source": str() ":memory:"
+            encoder_name                = "intfloat/e5-base"
+            distance_type               = "COSINE"
+            collection_name             = "who_guidelines"
+
+            retrieve_k_pre_rank         = 8
+            retrieve_k                  = 4
+            sparse_retriever            = "BM25"
+
+            llm_model                   = "gpt-4o-mini"
+            llm_temperature             = 0.4
+            llm_system_prompt_path      = "prompts/llm_system_prompt.txt"
+            llm_user_prompt_template    = "prompts/llm_user_prompt_template_haystack.txt"
+            QA_export_folder "
+            }:
+                pass
+            case _:
+                raise ValueError(f"invalid configuration: {config}")
+    """
+
+    return config
