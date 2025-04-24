@@ -1,6 +1,6 @@
 import argparse
 
-from embedding import setup_vector_db
+from ragwho.embedding import setup_vector_db
 
 from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever, InMemoryBM25Retriever
 from haystack.components.joiners import DocumentJoiner

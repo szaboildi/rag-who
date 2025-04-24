@@ -3,7 +3,7 @@ import os
 import argparse
 from openai import OpenAI
 
-from embedding import setup_vector_db
+from ragwho.embedding import setup_vector_db
 
 # from pydantic import BaseModel
 

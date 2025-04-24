@@ -4,7 +4,7 @@ from sentence_transformers import SentenceTransformer
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.embedders import SentenceTransformersDocumentEmbedder, SentenceTransformersTextEmbedder
 
-from preprocessing import process_text
+from ragwho.preprocessing import process_text
 import glob
 
 
