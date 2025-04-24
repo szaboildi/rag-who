@@ -1,5 +1,5 @@
 [project]
-name = "rag-who"
+name = "ragwho"
 version = "0.1.0"
 description = "A RAG project for World Health Organization guidelines"
 classifiers = [
@@ -17,7 +17,13 @@ dependencies = [
     "pandas==2.2.3",
     "sentence-transformers==3.4.1",
     "tomli>=1.1.0 ; python_full_version < '3.11'",
+    "fastapi==0.115.12",
+    "uvicorn>=0.34.2",
+    "qdrant-client>=1.14.1",
 ]
 
 [tool.setuptools]
 packages = ["rag-who"]
+
+[tool.uv]
+package = true
