@@ -140,12 +140,13 @@ def rag_query_list_qdrant(
 
 
 if __name__ == "__main__":
-    with open("rag-who.toml", mode="rb") as fp:
+    with open("parameters.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
     parser=argparse.ArgumentParser(description="argument parser for rag-who")
     parser.add_argument("--config_name", nargs='?', default="default")
     args=parser.parse_args()
+    print("Arguments parsed, parameters loaded")
 
     # print(args.config_name)
     # retrieve_and_eval(config_name=args.config_name)

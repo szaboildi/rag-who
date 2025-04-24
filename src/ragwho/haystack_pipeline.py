@@ -182,7 +182,7 @@ def rag_query_list_haystack(
 
 
 if __name__ == "__main__":
-    with open("rag-who.toml", mode="rb") as fp:
+    with open("parameters.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
     parser=argparse.ArgumentParser(description="argument parser for rag-who")
