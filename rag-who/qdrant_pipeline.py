@@ -1,5 +1,5 @@
 import os
-import json
+# import json
 import argparse
 from openai import OpenAI
 
@@ -87,10 +87,15 @@ def query_vector_db_list_qdrant(
     return answer_list
 
 
-def rag_setup_qdrant(config_name:str="default", api_key_variable:str="OPENAI_API_KEY"):
+def rag_setup_qdrant(
+    config_name:str="default", api_key_variable:str="OPENAI_API_KEY",
+    qdrant_cloud_api_key_variable:str="QDRANT_CLOUD_API_KEY",
+    from_scratch:bool=False):
     vector_db_client, encoder = setup_vector_db(
         encoder_name=config[config_name]["encoder_name"],
         client_source=config[config_name]["client_source"],
+        qdrant_cloud_api_key=os.environ.get(qdrant_cloud_api_key_variable),
+        from_scratch=from_scratch,
         input_folder=config[config_name]["input_text_folder"],
         chunk_length=config[config_name]["chunk_length"],
         chunk_overlap_words=config[config_name]["chunk_overlap"],
@@ -144,10 +149,14 @@ if __name__ == "__main__":
 
     # print(args.config_name)
     # retrieve_and_eval(config_name=args.config_name)
-    vector_db_client, encoder, api_client = rag_setup_qdrant()
+    # vector_db_client, encoder, gen_api_client = rag_setup_qdrant(
+    #     config_name=args.config_name, from_scratch=True)
+
+    vector_db_client, encoder, gen_api_client = rag_setup_qdrant(
+        config_name=args.config_name, from_scratch=False)
     query, response = rag_query_once_qdrant(
         "How long do rabbits live?",
-        vector_db_client, encoder, api_client)
+        vector_db_client, encoder, gen_api_client)
     print("\n", query, response, sep="\n")
 
     # print("#########################################")
