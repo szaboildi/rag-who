@@ -4,5 +4,5 @@ openai==1.64.0
 haystack-ai==2.10.3
 sentence-transformers==3.4.1
 fastapi==0.115.12
-uvicorn>=0.34.2,
+uvicorn>=0.34.2
 qdrant-client>=1.14.1
