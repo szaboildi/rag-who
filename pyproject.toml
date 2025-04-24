@@ -17,9 +17,14 @@ dependencies = [
     "pandas==2.2.3",
     "sentence-transformers==3.4.1",
     "tomli>=1.1.0 ; python_full_version < '3.11'",
-    "fastapi==0.115.12",
     "uvicorn>=0.34.2",
     "qdrant-client>=1.14.1",
+    "fastapi>=0.115.12",
+]
+
+[project.optional-dependencies]
+dev = [
+  "dotenv",
 ]
 
 [tool.uv]
