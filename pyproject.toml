@@ -20,6 +20,9 @@ dependencies = [
     "uvicorn>=0.34.2",
     "qdrant-client>=1.14.1",
     "fastapi>=0.115.12",
+    "torch==2.5.1 ; platform_machine != 'x86_64'",
+    "torch==2.5.1+cu124 ; platform_machine == 'x86_64'",
+    "dotenv>=0.9.9",
 ]
 
 [project.optional-dependencies]
@@ -29,3 +32,13 @@ dev = [
 
 [tool.uv]
 package = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu124" }
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
