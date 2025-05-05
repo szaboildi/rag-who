@@ -3,10 +3,10 @@ import os
 import json
 # from sklearn.metrics import ndcg_score
 
-from retrieval import setup_vector_db
-from qdrant_pipeline import query_vector_db_list_qdrant
-from haystack_pipeline import retrieval_pipeline_haystack, query_vector_db_list_haystack
-from utils import is_relevant_sentence_dict
+from ragwho.embedding import setup_vector_db
+from ragwho.qdrant_pipeline import query_vector_db_list_qdrant
+from ragwho.haystack_pipeline import retrieval_pipeline_haystack, query_vector_db_list_haystack
+from ragwho.utils import is_relevant_sentence_dict
 
 try:
     import tomllib # type: ignore
@@ -144,7 +144,7 @@ def ndcg_scorer_manual(
 
 
 def retrieve_and_eval(config_name:str="default", mode="qdrant"):
-    with open("rag-who.toml", mode="rb") as fp:
+    with open("parameters_local.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
     with open(os.path.join(config[config_name]["input_folder_qa"],

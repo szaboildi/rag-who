@@ -1,6 +1,6 @@
 import os
 import json
-from utils import is_relevant_sentence_str
+from ragwho.utils import is_relevant_sentence_str
 from haystack import Document
 
 def read_clean_text(path):

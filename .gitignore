@@ -174,4 +174,4 @@ cython_debug/
 data/*
 
 # Toy scripts
-rag-who/toy_scripts/*
+toy_scripts/*

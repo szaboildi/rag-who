@@ -4,12 +4,13 @@ from sentence_transformers import SentenceTransformer
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.embedders import SentenceTransformersDocumentEmbedder, SentenceTransformersTextEmbedder
 
-from preprocessing import process_text
+from ragwho.preprocessing import process_text
 import glob
 
 
 def setup_vector_db(
     encoder_name:str="intfloat/e5-base", client_source:str=":memory:",
+    qdrant_cloud_api_key:str="None", from_scratch:bool=False,
     input_folder:str="data/raw_input_files",
     chunk_length:int=200, chunk_overlap_words:int=20,
     collection_name:str="dummy_name", dist_name:str="COSINE",
@@ -20,7 +21,15 @@ def setup_vector_db(
 
         # Set up encoder and client
         encoder = SentenceTransformer(encoder_name)
-        client = QdrantClient(client_source)
+        if client_source == ":memory":
+            client = QdrantClient(client_source)
+        else:
+            client = QdrantClient(
+                url=client_source, api_key=qdrant_cloud_api_key)
+
+        if not from_scratch:
+            print("Vector database loaded")
+            return client, encoder
 
         client.create_collection(
             collection_name=collection_name,

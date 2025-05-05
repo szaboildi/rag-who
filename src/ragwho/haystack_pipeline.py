@@ -1,6 +1,6 @@
 import argparse
 
-from embedding import setup_vector_db
+from ragwho.embedding import setup_vector_db
 
 from haystack.components.retrievers.in_memory import InMemoryEmbeddingRetriever, InMemoryBM25Retriever
 from haystack.components.joiners import DocumentJoiner
@@ -182,7 +182,7 @@ def rag_query_list_haystack(
 
 
 if __name__ == "__main__":
-    with open("rag-who.toml", mode="rb") as fp:
+    with open("parameters_local.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
     parser=argparse.ArgumentParser(description="argument parser for rag-who")

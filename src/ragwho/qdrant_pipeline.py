@@ -1,9 +1,9 @@
 import os
-import json
+# import json
 import argparse
 from openai import OpenAI
 
-from embedding import setup_vector_db
+from ragwho.embedding import setup_vector_db
 
 # from pydantic import BaseModel
 
@@ -87,18 +87,23 @@ def query_vector_db_list_qdrant(
     return answer_list
 
 
-def rag_setup_qdrant(config_name:str="default", api_key_variable:str="OPENAI_API_KEY"):
+def rag_setup_qdrant(
+    config:dict[str], api_key_variable:str="OPENAI_API_KEY",
+    qdrant_cloud_api_key_variable:str="QDRANT_CLOUD_API_KEY",
+    from_scratch:bool=False):
     vector_db_client, encoder = setup_vector_db(
-        encoder_name=config[config_name]["encoder_name"],
-        client_source=config[config_name]["client_source"],
-        input_folder=config[config_name]["input_text_folder"],
-        chunk_length=config[config_name]["chunk_length"],
-        chunk_overlap_words=config[config_name]["chunk_overlap"],
-        collection_name=config[config_name]["collection_name"],
-        dist_name=config[config_name]["distance_type"],
-        input_folder_qa=config[config_name]["input_folder_qa"],
-        relevance_score_file_prefix=config[config_name]["relevance_score_file_prefix"],
-        sample_qa_file=config[config_name]["sample_qa_file"])
+        encoder_name=config["encoder_name"],
+        client_source=config["client_source"],
+        qdrant_cloud_api_key=os.environ.get(qdrant_cloud_api_key_variable),
+        from_scratch=from_scratch,
+        input_folder=config["input_text_folder"],
+        chunk_length=config["chunk_length"],
+        chunk_overlap_words=config["chunk_overlap"],
+        collection_name=config["collection_name"],
+        dist_name=config["distance_type"],
+        input_folder_qa=config["input_folder_qa"],
+        relevance_score_file_prefix=config["relevance_score_file_prefix"],
+        sample_qa_file=config["sample_qa_file"])
 
     api_client = OpenAI(api_key=os.environ.get(api_key_variable))
 
@@ -107,20 +112,20 @@ def rag_setup_qdrant(config_name:str="default", api_key_variable:str="OPENAI_API
 
 
 def rag_query_once_qdrant(
-    query:str, vector_db, encoder, api_client, config_name:str="default"):
+    query:str, vector_db, encoder, api_client, config:dict[str]):
     retrieved_doc_dict = query_vector_db_once_qdrant(
         vector_db, encoder, query,
-        collection_name = config[config_name]["collection_name"],
-        k=config[config_name]["retrieve_k"])
+        collection_name = config["collection_name"],
+        k=config["retrieve_k"])
     print("Documents retrieved")
 
     user_prompt = create_qa_string(query, retrieved_doc_dict["answers"])
 
     response = api_call(
         client=api_client, user_prompt=user_prompt,
-        system_propmt_path=config[config_name]["llm_system_prompt_path"],
-        model=config[config_name]["llm_model"],
-        temperature=config[config_name]["llm_temperature"])
+        system_propmt_path=config["llm_system_prompt_path"],
+        model=config["llm_model"],
+        temperature=config["llm_temperature"])
 
     return query, response
 
@@ -135,24 +140,31 @@ def rag_query_list_qdrant(
 
 
 if __name__ == "__main__":
-    with open("rag-who.toml", mode="rb") as fp:
+    with open("parameters_local.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
     parser=argparse.ArgumentParser(description="argument parser for rag-who")
     parser.add_argument("--config_name", nargs='?', default="default")
     args=parser.parse_args()
+    print("Arguments parsed, parameters loaded")
 
     # print(args.config_name)
     # retrieve_and_eval(config_name=args.config_name)
-    vector_db_client, encoder, api_client = rag_setup_qdrant()
+    # vector_db_client, encoder, gen_api_client = rag_setup_qdrant(
+    #     config_name=args.config_name, from_scratch=True)
+
+    vector_db_client, encoder, gen_api_client = rag_setup_qdrant(
+        config=config[args.config_name], from_scratch=False)
+    print("#########################################")
+
     query, response = rag_query_once_qdrant(
         "How long do rabbits live?",
-        vector_db_client, encoder, api_client)
-    print("\n", query, response, sep="\n")
+        vector_db_client, encoder, gen_api_client, config=config[args.config_name])
+    print(query, response, sep="\n")
 
-    # print("#########################################")
+    print("#########################################")
 
-    # response = rag_query_once_qdrant(
-    #     "How many deaths does alcoholism cause a year in the European Region?",
-    #     vector_db_client, encoder, api_client)
-    # print(response)
+    query, response = rag_query_once_qdrant(
+        "How many deaths does alcoholism cause a year in the European Region?",
+        vector_db_client, encoder, gen_api_client, config=config[args.config_name])
+    print(query, response, sep="\n")

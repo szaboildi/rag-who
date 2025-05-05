@@ -1,0 +1,43 @@
+[project]
+name = "ragwho"
+version = "0.1.0"
+description = "A RAG project for World Health Organization guidelines"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+readme = "README.md"
+authors = [
+  {name = "Ildi Szabo"},
+]
+requires-python = ">=3.10"
+dependencies = [
+    "haystack-ai==2.10.3",
+    "openai==1.64.0",
+    "pandas==2.2.3",
+    "sentence-transformers==3.4.1",
+    "tomli>=1.1.0 ; python_full_version < '3.11'",
+    "uvicorn>=0.34.2",
+    "qdrant-client>=1.14.1",
+    "fastapi>=0.115.12",
+    "torch==2.5.1 ; platform_machine != 'x86_64'",
+    "torch==2.5.1+cu124 ; platform_machine == 'x86_64'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "dotenv",
+]
+
+[tool.uv]
+package = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu124" }
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
