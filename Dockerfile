@@ -11,7 +11,6 @@ FROM ghcr.io/astral-sh/uv:python3.10-bookworm-slim
 COPY prompts prompts
 COPY parameters_remote.toml parameters_remote.toml
 COPY pyproject.toml pyproject.toml
-COPY .env .env
 COPY src src
 
 RUN uv pip install . --system

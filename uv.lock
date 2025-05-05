@@ -1607,7 +1607,6 @@ name = "ragwho"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "dotenv" },
     { name = "fastapi" },
     { name = "haystack-ai" },
     { name = "openai" },
@@ -1627,7 +1626,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dotenv", specifier = ">=0.9.9" },
     { name = "dotenv", marker = "extra == 'dev'" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "haystack-ai", specifier = "==2.10.3" },
