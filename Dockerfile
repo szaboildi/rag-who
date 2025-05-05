@@ -16,4 +16,4 @@ COPY src src
 
 RUN uv pip install . --system
 
-CMD uvicorn ragwho.api.fast:api --host 0.0.0.0 --port $PORT
+CMD ["uvicorn", "ragwho.api.fast:api", "--host", "0.0.0.0", "--port", "80"]
