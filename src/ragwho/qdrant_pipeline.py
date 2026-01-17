@@ -1,4 +1,5 @@
 import os
+
 # import json
 import argparse
 from openai import OpenAI
@@ -9,18 +10,19 @@ from ragwho.embedding import setup_vector_db
 
 
 try:
-    import tomllib # type: ignore
+    import tomllib  # type: ignore
 except ModuleNotFoundError:
     import tomli as tomllib
 
 
-
-def create_qa_string(question:str, answers:list[str])->str:
-    user_prompt = f"Answer the following question:\n<Question>{question}\n</Question>\n\n"
+def create_qa_string(question: str, answers: list[str]) -> str:
+    user_prompt = (
+        f"Answer the following question:\n<Question>{question}\n</Question>\n\n"
+    )
     user_prompt += "<Context>\n"
 
     for i, answer in enumerate(answers):
-        user_prompt += f"<Document{i+1}>{answer}</Document{i+1}>\n\n"
+        user_prompt += f"<Document{i + 1}>{answer}</Document{i + 1}>\n\n"
 
     user_prompt += "</Context>"
 
@@ -31,9 +33,13 @@ def create_qa_string(question:str, answers:list[str])->str:
 #     answer_to_question: str
 
 
-def api_call(client:OpenAI, user_prompt:str,
-             system_propmt_path:str, model="gpt-4o-mini",
-             temperature:float=0):
+def api_call(
+    client: OpenAI,
+    user_prompt: str,
+    system_propmt_path: str,
+    model="gpt-4o-mini",
+    temperature: float = 0,
+):
     # client = OpenAI(
     #     api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -46,51 +52,62 @@ def api_call(client:OpenAI, user_prompt:str,
                 "role": "system",
                 "content": system_prompt,
             },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
+            {"role": "user", "content": user_prompt},
         ],
         # response_format=QuestionAnswering,
         model=model,
-        temperature=temperature
+        temperature=temperature,
     )
 
     return chat_completion.choices[0].message.content
 
 
 def query_vector_db_once_qdrant(
-    client, encoder, question:str, collection_name:str="dummy_name", k:int=5,
-    dist_name:str="COSINE"):
-
+    client,
+    encoder,
+    question: str,
+    collection_name: str = "dummy_name",
+    k: int = 5,
+    dist_name: str = "COSINE",
+):
     raw_answer = client.query_points(
         collection_name=collection_name,
         query=encoder.encode(question, normalize_embeddings=True).tolist(),
-        limit=k).points
+        limit=k,
+    ).points
 
-    processed_answer = {"question": question,
-    "answers": [{
-        "text": hit.payload["text"],
-        dist_name.lower(): hit.score} for hit in raw_answer]
+    processed_answer = {
+        "question": question,
+        "answers": [
+            {"text": hit.payload["text"], dist_name.lower(): hit.score}
+            for hit in raw_answer
+        ],
     }
 
     return processed_answer
 
 
 def query_vector_db_list_qdrant(
-    client, encoder, question_list:list[str],
-    collection_name:str="dummy_name", k:int=5):
+    client,
+    encoder,
+    question_list: list[str],
+    collection_name: str = "dummy_name",
+    k: int = 5,
+):
     answer_list = [
-        query_vector_db_once_qdrant(
-            client, encoder, q, collection_name, k) for q in question_list]
+        query_vector_db_once_qdrant(client, encoder, q, collection_name, k)
+        for q in question_list
+    ]
 
     return answer_list
 
 
 def rag_setup_qdrant(
-    config:dict[str], api_key_variable:str="OPENAI_API_KEY",
-    qdrant_cloud_api_key_variable:str="QDRANT_CLOUD_API_KEY",
-    from_scratch:bool=False):
+    config: dict[str],
+    api_key_variable: str = "OPENAI_API_KEY",
+    qdrant_cloud_api_key_variable: str = "QDRANT_CLOUD_API_KEY",
+    from_scratch: bool = False,
+):
     vector_db_client, encoder = setup_vector_db(
         encoder_name=config["encoder_name"],
         client_source=config["client_source"],
@@ -103,7 +120,8 @@ def rag_setup_qdrant(
         dist_name=config["distance_type"],
         input_folder_qa=config["input_folder_qa"],
         relevance_score_file_prefix=config["relevance_score_file_prefix"],
-        sample_qa_file=config["sample_qa_file"])
+        sample_qa_file=config["sample_qa_file"],
+    )
 
     api_client = OpenAI(api_key=os.environ.get(api_key_variable))
 
@@ -112,40 +130,48 @@ def rag_setup_qdrant(
 
 
 def rag_query_once_qdrant(
-    query:str, vector_db, encoder, api_client, config:dict[str]):
+    query: str, vector_db, encoder, api_client, config: dict[str]
+):
     retrieved_doc_dict = query_vector_db_once_qdrant(
-        vector_db, encoder, query,
-        collection_name = config["collection_name"],
-        k=config["retrieve_k"])
+        vector_db,
+        encoder,
+        query,
+        collection_name=config["collection_name"],
+        k=config["retrieve_k"],
+    )
     print("Documents retrieved")
 
     user_prompt = create_qa_string(query, retrieved_doc_dict["answers"])
 
     response = api_call(
-        client=api_client, user_prompt=user_prompt,
+        client=api_client,
+        user_prompt=user_prompt,
         system_propmt_path=config["llm_system_prompt_path"],
         model=config["llm_model"],
-        temperature=config["llm_temperature"])
+        temperature=config["llm_temperature"],
+    )
 
     return query, response
 
 
 def rag_query_list_qdrant(
-    queries:list[str], vector_db, encoder, api_client, config_name:str="default"):
-    responses = [rag_query_once_qdrant(
-        q, vector_db, encoder, api_client, config_name)[1] for q in queries]
+    queries: list[str], vector_db, encoder, api_client, config_name: str = "default"
+):
+    responses = [
+        rag_query_once_qdrant(q, vector_db, encoder, api_client, config_name)[1]
+        for q in queries
+    ]
 
     return queries, responses
-
 
 
 if __name__ == "__main__":
     with open("parameters_local.toml", mode="rb") as fp:
         config = tomllib.load(fp)
 
-    parser=argparse.ArgumentParser(description="argument parser for rag-who")
-    parser.add_argument("--config_name", nargs='?', default="default")
-    args=parser.parse_args()
+    parser = argparse.ArgumentParser(description="argument parser for rag-who")
+    parser.add_argument("--config_name", nargs="?", default="default")
+    args = parser.parse_args()
     print("Arguments parsed, parameters loaded")
 
     # print(args.config_name)
@@ -154,17 +180,26 @@ if __name__ == "__main__":
     #     config_name=args.config_name, from_scratch=True)
 
     vector_db_client, encoder, gen_api_client = rag_setup_qdrant(
-        config=config[args.config_name], from_scratch=False)
+        config=config[args.config_name], from_scratch=False
+    )
     print("#########################################")
 
     query, response = rag_query_once_qdrant(
         "How long do rabbits live?",
-        vector_db_client, encoder, gen_api_client, config=config[args.config_name])
+        vector_db_client,
+        encoder,
+        gen_api_client,
+        config=config[args.config_name],
+    )
     print(query, response, sep="\n")
 
     print("#########################################")
 
     query, response = rag_query_once_qdrant(
         "How many deaths does alcoholism cause a year in the European Region?",
-        vector_db_client, encoder, gen_api_client, config=config[args.config_name])
+        vector_db_client,
+        encoder,
+        gen_api_client,
+        config=config[args.config_name],
+    )
     print(query, response, sep="\n")
